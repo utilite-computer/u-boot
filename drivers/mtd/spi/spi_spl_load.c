@@ -13,6 +13,19 @@
 #include <spi_flash.h>
 #include <spl.h>
 
+#ifndef CONFIG_SF_DEFAULT_SPEED
+# define CONFIG_SF_DEFAULT_SPEED	1000000
+#endif
+#ifndef CONFIG_SPL_SPI_MODE
+# define CONFIG_SPL_SPI_MODE		SPI_MODE_3
+#endif
+#ifndef CONFIG_SPL_SPI_CS
+# define CONFIG_SPL_SPI_CS		0
+#endif
+#ifndef CONFIG_SPL_SPI_BUS
+# define CONFIG_SPL_SPI_BUS		0
+#endif
+
 /*
  * The main entry for SPI booting. It's necessary that SDRAM is already
  * configured and available since this code loads the main U-Boot image
@@ -28,7 +41,7 @@ void spl_spi_load_image(void)
 	 */
 
 	flash = spi_flash_probe(CONFIG_SPL_SPI_BUS, CONFIG_SPL_SPI_CS,
-				CONFIG_SF_DEFAULT_SPEED, SPI_MODE_3);
+				CONFIG_SF_DEFAULT_SPEED, CONFIG_SPL_SPI_MODE);
 	if (!flash) {
 		puts("SPI probe failed.\n");
 		hang();

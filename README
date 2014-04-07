@@ -2790,6 +2790,13 @@ CBFS (Coreboot Filesystem) support
 		CONFIG_SF_DEFAULT_MODE 		(see include/spi.h)
 		CONFIG_SF_DEFAULT_SPEED		in Hz
 
+		The following defaults may be provided by the platform to
+		override SPL defaults for SPI.
+
+		CONFIG_SPL_SPI_MODE	SPI mode	Default SPI_MODE3
+		CONFIG_SPL_SPI_CS	Chip-select	Default 0
+		CONFIG_SPL_SPI_BUS	Bus identifier	Default 0
+
 		CONFIG_CMD_SF_TEST
 
 		Define this option to include a destructive SPI flash
