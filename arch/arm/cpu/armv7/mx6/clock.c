@@ -49,6 +49,74 @@ void enable_usboh3_clk(unsigned char enable)
 
 }
 
+void enable_enet_clk(unsigned char enable)
+{
+	u32 reg;
+
+	reg = __raw_readl(&imx_ccm->CCGR1);
+	if (enable)
+		reg |= MXC_CCM_CCGR1_ENET_CLK_ENABLE_MASK;
+	else
+		reg &= ~(MXC_CCM_CCGR1_ENET_CLK_ENABLE_MASK);
+	__raw_writel(reg, &imx_ccm->CCGR1);
+}
+
+#ifdef CONFIG_MXC_UART
+void enable_uart_clk(unsigned char enable)
+{
+	u32 reg, mask;
+
+	reg = __raw_readl(&imx_ccm->CCGR5);
+	mask = MXC_CCM_CCGR5_UART_MASK | MXC_CCM_CCGR5_UART_SERIAL_MASK;
+	if (enable)
+		reg |= mask;
+	else
+		reg &= ~mask;
+	__raw_writel(reg, &imx_ccm->CCGR5);
+}
+#endif
+
+#ifdef CONFIG_SPI
+/* spi_num can be from 0 - 4 */
+int enable_cspi_clock(unsigned char enable, unsigned spi_num)
+{
+	u32 reg, mask;
+
+	if (spi_num > 4)
+		return -EINVAL;
+
+	mask = MXC_CCM_CCGR_CG_MASK << (spi_num * 2);
+	reg = readl(&imx_ccm->CCGR1);
+	if (enable)
+		reg |= mask;
+	else
+		reg &= ~mask;
+
+	__raw_writel(reg, &imx_ccm->CCGR1);
+	return 0;
+}
+#endif
+
+#ifdef CONFIG_MMC
+int enable_usdhc_clk(unsigned char enable, unsigned bus_num)
+{
+	u32 reg, mask;
+
+	if (bus_num > 3)
+		return -EINVAL;
+
+	mask = MXC_CCM_CCGR_CG_MASK << (bus_num * 2 + 2);
+	reg = readl(&imx_ccm->CCGR6);
+	if (enable)
+		reg |= mask;
+	else
+		reg &= ~mask;
+
+	__raw_writel(reg, &imx_ccm->CCGR6);
+	return 0;
+}
+#endif
+
 #ifdef CONFIG_SYS_I2C_MXC
 /* i2c_num can be from 0 - 2 */
 int enable_i2c_clk(unsigned char enable, unsigned i2c_num)
