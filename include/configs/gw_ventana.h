@@ -188,7 +188,6 @@
 #define CONFIG_USB_ETH_CDC
 #define CONFIG_NETCONSOLE
 #define CONFIG_SYS_USB_EVENT_POLL_VIA_CONTROL_EP
-#define CONFIG_USB_HUB_MIN_POWER_ON_DELAY 1200
 
 /* serial console (ttymxc1,115200) */
 #define CONFIG_CONS_INDEX              1
