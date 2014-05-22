@@ -163,8 +163,10 @@ void board_init_r(gd_t *dummy1, ulong dummy2)
 	case BOOT_DEVICE_MMC1:
 	case BOOT_DEVICE_MMC2:
 	case BOOT_DEVICE_MMC2_2:
-		spl_mmc_load_image();
-		break;
+		if (!spl_mmc_load_image())
+			break;
+		else
+			puts("MMC boot failed, booting from SPI flash\n");
 #endif
 #ifdef CONFIG_SPL_NAND_SUPPORT
 	case BOOT_DEVICE_NAND:

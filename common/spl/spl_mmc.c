@@ -68,7 +68,7 @@ static int mmc_load_image_raw_os(struct mmc *mmc)
 }
 #endif
 
-void spl_mmc_load_image(void)
+int spl_mmc_load_image(void)
 {
 	struct mmc *mmc;
 	int err;
@@ -81,7 +81,7 @@ void spl_mmc_load_image(void)
 #ifdef CONFIG_SPL_LIBCOMMON_SUPPORT
 		puts("spl: mmc device not found!!\n");
 #endif
-		hang();
+		return -1;
 	}
 
 	err = mmc_init(mmc);
@@ -89,7 +89,7 @@ void spl_mmc_load_image(void)
 #ifdef CONFIG_SPL_LIBCOMMON_SUPPORT
 		printf("spl: mmc init failed: err - %d\n", err);
 #endif
-		hang();
+		return -1;
 	}
 
 	boot_mode = spl_boot_mode();
@@ -127,7 +127,7 @@ void spl_mmc_load_image(void)
 #ifdef CONFIG_SPL_LIBCOMMON_SUPPORT
 			puts("MMC partition switch failed\n");
 #endif
-			hang();
+			return -1;
 		}
 #ifdef CONFIG_SPL_OS_BOOT
 		if (spl_start_uboot() || mmc_load_image_raw_os(mmc))
@@ -139,9 +139,11 @@ void spl_mmc_load_image(void)
 #ifdef CONFIG_SPL_LIBCOMMON_SUPPORT
 		puts("spl: wrong MMC boot mode\n");
 #endif
-		hang();
+		return -1;
 	}
 
 	if (err)
-		hang();
+		return -1;
+
+	return 0;
 }
