@@ -26,8 +26,16 @@ static int cl_eeprom_layout; /* Implicitly LAYOUT_INVALID */
 
 static int cl_eeprom_read(uint offset, uchar *buf, int len)
 {
-	return i2c_read(CONFIG_SYS_I2C_EEPROM_ADDR, offset,
+	int res;
+	unsigned int current_i2c_bus = i2c_get_bus_num();
+
+	i2c_set_bus_num(CONFIG_SYS_I2C_EEPROM_BUS);
+	res = i2c_read(CONFIG_SYS_I2C_EEPROM_ADDR, offset,
 			CONFIG_SYS_I2C_EEPROM_ADDR_LEN, buf, len);
+
+	i2c_set_bus_num(current_i2c_bus);
+
+	return res;
 }
 
 static int cl_eeprom_setup_layout(void)
