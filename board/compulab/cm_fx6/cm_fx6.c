@@ -11,9 +11,66 @@
 #include <common.h>
 #include <asm/arch/mx6_ddr_regs.h>
 #include <asm/arch/mx6-ddr.h>
+#include <asm/arch/crm_regs.h>
+#include <asm/arch/sys_proto.h>
+#include <asm/io.h>
 #include "common.h"
 
 DECLARE_GLOBAL_DATA_PTR;
+
+#ifdef CONFIG_NAND_MXS
+static void cm_fx6_setup_gpmi_nand(void)
+{
+	struct mxc_ccm_reg *mxc_ccm = (struct mxc_ccm_reg *)CCM_BASE_ADDR;
+
+	MX6QDL_SET_PAD(PAD_NANDF_CLE__NAND_CLE, MUX_PAD_CTRL(NO_PAD_CTRL));
+	MX6QDL_SET_PAD(PAD_NANDF_ALE__NAND_ALE, MUX_PAD_CTRL(NO_PAD_CTRL));
+	MX6QDL_SET_PAD(PAD_NANDF_CS0__NAND_CE0_B, MUX_PAD_CTRL(NO_PAD_CTRL));
+	MX6QDL_SET_PAD(PAD_NANDF_RB0__NAND_READY_B, MUX_PAD_CTRL(NO_PAD_CTRL));
+	MX6QDL_SET_PAD(PAD_NANDF_D0__NAND_DATA00, MUX_PAD_CTRL(NO_PAD_CTRL));
+	MX6QDL_SET_PAD(PAD_NANDF_D1__NAND_DATA01, MUX_PAD_CTRL(NO_PAD_CTRL));
+	MX6QDL_SET_PAD(PAD_NANDF_D2__NAND_DATA02, MUX_PAD_CTRL(NO_PAD_CTRL));
+	MX6QDL_SET_PAD(PAD_NANDF_D3__NAND_DATA03, MUX_PAD_CTRL(NO_PAD_CTRL));
+	MX6QDL_SET_PAD(PAD_NANDF_D4__NAND_DATA04, MUX_PAD_CTRL(NO_PAD_CTRL));
+	MX6QDL_SET_PAD(PAD_NANDF_D5__NAND_DATA05, MUX_PAD_CTRL(NO_PAD_CTRL));
+	MX6QDL_SET_PAD(PAD_NANDF_D6__NAND_DATA06, MUX_PAD_CTRL(NO_PAD_CTRL));
+	MX6QDL_SET_PAD(PAD_NANDF_D7__NAND_DATA07, MUX_PAD_CTRL(NO_PAD_CTRL));
+	MX6QDL_SET_PAD(PAD_SD4_CMD__NAND_RE_B, MUX_PAD_CTRL(NO_PAD_CTRL));
+	MX6QDL_SET_PAD(PAD_SD4_CLK__NAND_WE_B, MUX_PAD_CTRL(NO_PAD_CTRL));
+
+	setbits_le32(&mxc_ccm->CCGR6,
+		     MXC_CCM_CCGR6_USDHC3_MASK | MXC_CCM_CCGR6_USDHC4_MASK);
+
+	clrbits_le32(&mxc_ccm->CCGR4,
+		     MXC_CCM_CCGR4_RAWNAND_U_BCH_INPUT_APB_MASK |
+		     MXC_CCM_CCGR4_RAWNAND_U_GPMI_BCH_INPUT_BCH_MASK |
+		     MXC_CCM_CCGR4_RAWNAND_U_GPMI_BCH_INPUT_GPMI_IO_MASK |
+		     MXC_CCM_CCGR4_RAWNAND_U_GPMI_INPUT_APB_MASK |
+		     MXC_CCM_CCGR4_PL301_MX6QPER1_BCH_MASK);
+
+	clrbits_le32(&mxc_ccm->CCGR2, MXC_CCM_CCGR2_IOMUX_IPT_CLK_IO_MASK);
+
+	/* config gpmi and bch clock to 11Mhz*/
+	clrsetbits_le32(&mxc_ccm->cs2cdr,
+			MXC_CCM_CS2CDR_ENFC_CLK_PODF_MASK |
+			MXC_CCM_CS2CDR_ENFC_CLK_PRED_MASK |
+			MXC_CCM_CS2CDR_ENFC_CLK_SEL_MASK,
+			MXC_CCM_CS2CDR_ENFC_CLK_PODF(0xf) |
+			MXC_CCM_CS2CDR_ENFC_CLK_PRED(1)   |
+			MXC_CCM_CS2CDR_ENFC_CLK_SEL(0));
+
+	setbits_le32(&mxc_ccm->CCGR2, MXC_CCM_CCGR2_IOMUX_IPT_CLK_IO_MASK);
+	/* enable gpmi and bch clock gating */
+	setbits_le32(&mxc_ccm->CCGR4,
+		     MXC_CCM_CCGR4_RAWNAND_U_BCH_INPUT_APB_MASK |
+		     MXC_CCM_CCGR4_RAWNAND_U_GPMI_BCH_INPUT_BCH_MASK |
+		     MXC_CCM_CCGR4_RAWNAND_U_GPMI_BCH_INPUT_GPMI_IO_MASK |
+		     MXC_CCM_CCGR4_RAWNAND_U_GPMI_INPUT_APB_MASK |
+		     MXC_CCM_CCGR4_PL301_MX6QPER1_BCH_MASK);
+}
+#else
+static void cm_fx6_setup_gpmi_nand(void) {}
+#endif
 
 #ifdef CONFIG_FSL_ESDHC
 int board_mmc_init(bd_t *bis)
@@ -35,6 +92,8 @@ int board_mmc_init(bd_t *bis)
 int board_init(void)
 {
 	gd->bd->bi_boot_params = PHYS_SDRAM_1 + 0x100;
+	cm_fx6_setup_gpmi_nand();
+
 	return 0;
 }
 
