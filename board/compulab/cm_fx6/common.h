@@ -10,6 +10,8 @@
 #include <asm/arch/clock.h>
 
 #define CM_FX6_ENET_NRST	IMX_GPIO_NR(2, 8)
+#define CM_FX6_USB_HUB_RST	IMX_GPIO_NR(7, 8)
+#define SB_FX6_USB_OTG_PWR	IMX_GPIO_NR(3, 22)
 
 #define MX6QDL_SET_PAD(p, q) \
 	if (is_cpu_type(MXC_CPU_MX6Q) || is_cpu_type(MXC_CPU_MX6D)) \
