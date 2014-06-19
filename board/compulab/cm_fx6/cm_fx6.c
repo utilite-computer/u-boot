@@ -12,18 +12,104 @@
 #include <miiphy.h>
 #include <netdev.h>
 #include <fdt_support.h>
+#include <sata.h>
 #include <asm/arch/mx6_ddr_regs.h>
 #include <asm/arch/mx6-ddr.h>
 #include <asm/arch/crm_regs.h>
 #include <asm/arch/sys_proto.h>
 #include <asm/arch/iomux.h>
 #include <asm/imx-common/mxc_i2c.h>
+#include <asm/imx-common/sata.h>
 #include <asm/io.h>
 #include <asm/gpio.h>
 #include "common.h"
 #include "../common/eeprom.h"
 
 DECLARE_GLOBAL_DATA_PTR;
+
+#ifdef CONFIG_DWC_AHSATA
+static int cm_fx6_issd_gpios[] = {
+	/* The order of the GPIOs in the array is important! */
+	CM_FX6_SATA_PHY_SLP,
+	CM_FX6_SATA_nRSTDLY,
+	CM_FX6_SATA_PWREN,
+	CM_FX6_SATA_nSTANDBY1,
+	CM_FX6_SATA_nSTANDBY2,
+	CM_FX6_SATA_LDO_EN,
+};
+
+static void cm_fx6_sata_power(int on)
+{
+	int i;
+
+	if (!on) { /* tell the iSSD that the power will be removed */
+		gpio_direction_output(CM_FX6_SATA_PWLOSS_INT, 1);
+		mdelay(10);
+	}
+
+	for (i = 0; i < ARRAY_SIZE(cm_fx6_issd_gpios); i++) {
+		gpio_direction_output(cm_fx6_issd_gpios[i], on);
+		udelay(100);
+	}
+
+	if (!on) /* for compatibility lower the power loss interrupt */
+		gpio_direction_output(CM_FX6_SATA_PWLOSS_INT, 0);
+}
+
+static void cm_fx6_setup_issd(void)
+{
+	/* SATA PWR */
+	MX6QDL_SET_PAD(PAD_ENET_TX_EN__GPIO1_IO28, MUX_PAD_CTRL(NO_PAD_CTRL));
+	MX6QDL_SET_PAD(PAD_EIM_A22__GPIO2_IO16,	MUX_PAD_CTRL(NO_PAD_CTRL));
+	MX6QDL_SET_PAD(PAD_EIM_D20__GPIO3_IO20,	MUX_PAD_CTRL(NO_PAD_CTRL));
+	MX6QDL_SET_PAD(PAD_EIM_A25__GPIO5_IO02,	MUX_PAD_CTRL(NO_PAD_CTRL));
+	/* SATA CTRL */
+	MX6QDL_SET_PAD(PAD_ENET_TXD0__GPIO1_IO30, MUX_PAD_CTRL(NO_PAD_CTRL));
+	MX6QDL_SET_PAD(PAD_EIM_D23__GPIO3_IO23, MUX_PAD_CTRL(NO_PAD_CTRL));
+	MX6QDL_SET_PAD(PAD_EIM_D29__GPIO3_IO29, MUX_PAD_CTRL(NO_PAD_CTRL));
+	MX6QDL_SET_PAD(PAD_EIM_A23__GPIO6_IO06, MUX_PAD_CTRL(NO_PAD_CTRL));
+	MX6QDL_SET_PAD(PAD_EIM_BCLK__GPIO6_IO31, MUX_PAD_CTRL(NO_PAD_CTRL));
+
+	/* Make sure this gpio has logical 0 value */
+	gpio_direction_output(CM_FX6_SATA_PWLOSS_INT, 0);
+	udelay(100);
+
+	cm_fx6_sata_power(0);
+	mdelay(250);
+	cm_fx6_sata_power(1);
+}
+
+int sata_initialize(void)
+{
+	int err;
+
+	if (is_cpu_type(MXC_CPU_MX6SOLO)) {
+		puts("SATA not supported on this module\n");
+		return -1;
+	}
+
+	cm_fx6_setup_issd();
+	err = setup_sata();
+	if (err) {
+		printf("SATA setup failed: %d\n", err);
+		return err;
+	}
+
+	udelay(100);
+
+	return __sata_initialize();
+}
+
+#ifdef CONFIG_SHOW_BOOT_PROGRESS
+void show_boot_progress(int val)
+{
+	if (val == BOOTSTAGE_ID_RUN_OS) /* we are in the bootx command */
+		cm_fx6_sata_power(0);
+}
+#endif
+#else
+static void cm_fx6_setup_issd(void) {}
+#endif
 
 #ifdef CONFIG_SYS_I2C_MXC
 #define I2C_PAD_CTRL	(PAD_CTL_PUS_100K_UP | PAD_CTL_SPEED_MED | \
