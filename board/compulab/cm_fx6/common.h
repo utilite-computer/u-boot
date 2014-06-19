@@ -9,6 +9,8 @@
 #include <asm/arch/mx6-pins.h>
 #include <asm/arch/clock.h>
 
+#define CM_FX6_ENET_NRST	IMX_GPIO_NR(2, 8)
+
 #define MX6QDL_SET_PAD(p, q) \
 	if (is_cpu_type(MXC_CPU_MX6Q) || is_cpu_type(MXC_CPU_MX6D)) \
 		imx_iomux_v3_setup_pad(MX6Q_##p | q);\
