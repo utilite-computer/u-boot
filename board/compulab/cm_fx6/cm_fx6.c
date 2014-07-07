@@ -79,9 +79,10 @@ static void cm_fx6_setup_issd(void)
 	cm_fx6_sata_power(1);
 }
 
+#define CM_FX6_SATA_INIT_RETRIES	10
 int sata_initialize(void)
 {
-	int err;
+	int err, i;
 
 	if (is_cpu_type(MXC_CPU_MX6SOLO)) {
 		puts("SATA not supported on this module\n");
@@ -89,15 +90,27 @@ int sata_initialize(void)
 	}
 
 	cm_fx6_setup_issd();
-	err = setup_sata();
-	if (err) {
-		printf("SATA setup failed: %d\n", err);
-		return err;
+	for (i = 0; i < CM_FX6_SATA_INIT_RETRIES; i++) {
+		err = setup_sata();
+		if (err) {
+			printf("SATA setup failed: %d\n", err);
+			return err;
+		}
+
+		udelay(100);
+
+		err = __sata_initialize();
+		if (!err)
+			break;
+
+		/* There is no device on the SATA port */
+		if (sata_port_status(0, 0) == 0)
+			break;
+
+		/* There's a device, but link not established. Retry */
 	}
 
-	udelay(100);
-
-	return __sata_initialize();
+	return err;
 }
 
 #ifdef CONFIG_SHOW_BOOT_PROGRESS
