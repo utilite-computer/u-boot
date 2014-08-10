@@ -424,7 +424,9 @@ static u32 boot_dev;
 
 void spl_board_init(void)
 {
-	uint soc_sbmr = readl(SRC_BASE_ADDR + 0x4);
+	struct src *psrc = (struct src *)SRC_BASE_ADDR;
+	uint gpr10_boot = readl(&psrc->gpr10) & (1 << 28);
+	uint soc_sbmr = gpr10_boot ? readl(&psrc->gpr9) : readl(&psrc->sbmr1);
 	uint bt_mem_ctl = (soc_sbmr & 0x000000FF) >> 4;
 	uint bt_mem_type = (soc_sbmr & 0x00000008) >> 3;
 
