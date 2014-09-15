@@ -30,12 +30,12 @@ DECLARE_GLOBAL_DATA_PTR;
 #ifdef CONFIG_DWC_AHSATA
 static int cm_fx6_issd_gpios[] = {
 	/* The order of the GPIOs in the array is important! */
+	CM_FX6_SATA_LDO_EN,
 	CM_FX6_SATA_PHY_SLP,
 	CM_FX6_SATA_nRSTDLY,
 	CM_FX6_SATA_PWREN,
 	CM_FX6_SATA_nSTANDBY1,
 	CM_FX6_SATA_nSTANDBY2,
-	CM_FX6_SATA_LDO_EN,
 };
 
 static void cm_fx6_sata_power(int on)
