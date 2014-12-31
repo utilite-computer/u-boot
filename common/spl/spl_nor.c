@@ -7,7 +7,7 @@
 #include <common.h>
 #include <spl.h>
 
-void spl_nor_load_image(void)
+int spl_nor_load_image(void)
 {
 	/*
 	 * Loading of the payload to SDRAM is done with skipping of
@@ -48,4 +48,6 @@ void spl_nor_load_image(void)
 		       (void *)(CONFIG_SYS_FDT_BASE),
 		       (16 << 10));
 	}
+
+	return 0;
 }

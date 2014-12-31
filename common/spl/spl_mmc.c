@@ -8,6 +8,7 @@
  */
 #include <common.h>
 #include <spl.h>
+#include <errno.h>
 #include <asm/u-boot.h>
 #include <mmc.h>
 #include <version.h>
@@ -68,28 +69,34 @@ static int mmc_load_image_raw_os(struct mmc *mmc)
 }
 #endif
 
-void spl_mmc_load_image(void)
+int spl_mmc_load_image(void)
 {
 	struct mmc *mmc;
 	int err;
 	u32 boot_mode;
 
-	mmc_initialize(gd->bd);
+	err = mmc_initialize(gd->bd);
+	if (err) {
+#ifdef CONFIG_SPL_LIBCOMMON_SUPPORT
+		printf("spl: mmc_initialize failed: err - %d\n", err);
+#endif
+		return err;
+	}
 	/* We register only one device. So, the dev id is always 0 */
 	mmc = find_mmc_device(0);
 	if (!mmc) {
 #ifdef CONFIG_SPL_LIBCOMMON_SUPPORT
 		puts("spl: mmc device not found!!\n");
 #endif
-		hang();
+		return -ENODEV;
 	}
 
 	err = mmc_init(mmc);
 	if (err) {
 #ifdef CONFIG_SPL_LIBCOMMON_SUPPORT
-		printf("spl: mmc init failed: err - %d\n", err);
+		printf("spl: mmc_init failed: err - %d\n", err);
 #endif
-		hang();
+		return err;
 	}
 
 	boot_mode = spl_boot_mode();
@@ -123,11 +130,12 @@ void spl_mmc_load_image(void)
 		if (part == 7)
 			part = 0;
 
-		if (mmc_switch_part(0, part)) {
+		err = mmc_switch_part(0, part);
+		if (err) {
 #ifdef CONFIG_SPL_LIBCOMMON_SUPPORT
-			puts("MMC partition switch failed\n");
+			printf("MMC partition switch failed: err - %d\n", err);
 #endif
-			hang();
+			return err;
 		}
 #ifdef CONFIG_SPL_OS_BOOT
 		if (spl_start_uboot() || mmc_load_image_raw_os(mmc))
@@ -139,9 +147,8 @@ void spl_mmc_load_image(void)
 #ifdef CONFIG_SPL_LIBCOMMON_SUPPORT
 		puts("spl: wrong MMC boot mode\n");
 #endif
-		hang();
+		return -EINVAL;
 	}
 
-	if (err)
-		hang();
+	return err;
 }
