@@ -131,6 +131,23 @@ static int spl_ram_load_image(void)
 }
 #endif
 
+#ifndef BOOT_DEVICE_NONE
+#define BOOT_DEVICE_NONE 0
+#endif
+
+static u32 spl_boot_list[] = {
+	BOOT_DEVICE_NONE,
+	BOOT_DEVICE_NONE,
+	BOOT_DEVICE_NONE,
+	BOOT_DEVICE_NONE,
+	BOOT_DEVICE_NONE,
+};
+
+__weak void board_boot_order(u32 *spl_boot_list)
+{
+	spl_boot_list[0] = spl_boot_device();
+}
+
 static int spl_load_image(u32 boot_device)
 {
 	switch (boot_device) {
@@ -193,7 +210,7 @@ static int spl_load_image(u32 boot_device)
 
 void board_init_r(gd_t *dummy1, ulong dummy2)
 {
-	u32 boot_device;
+	int i;
 	debug(">>spl:board_init_r()\n");
 
 #ifdef CONFIG_SYS_SPL_MALLOC_START
@@ -213,10 +230,16 @@ void board_init_r(gd_t *dummy1, ulong dummy2)
 	spl_board_init();
 #endif
 
-	boot_device = spl_boot_device();
-	debug("boot device - %d\n", boot_device);
-	if (spl_load_image(boot_device))
+	board_boot_order(spl_boot_list);
+	for (i = 0; i < ARRAY_SIZE(spl_boot_list); i++) {
+		if (!spl_load_image(spl_boot_list[i]))
+			break;
+	}
+
+	if (i == ARRAY_SIZE(spl_boot_list)) {
+		puts("SPL: failed to boot from all boot devices\n");
 		hang();
+	}
 
 	switch (spl_image.os) {
 	case IH_OS_U_BOOT:
